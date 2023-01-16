@@ -8,10 +8,10 @@ shopt -s inherit_errexit
 [[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
 
 function gh_curl() {
-	if [[ -n ${GITHUB_API_TOKEN} ]]; then
-		curl -s -H "Authorization: token ${GITHUB_API_TOKEN}" "$@"
+	if [[ -n ${GITHUB_API_TOKEN:-} ]]; then
+		curl -fsS -H "Authorization: token ${GITHUB_API_TOKEN}" "$@"
 	else
-		curl -s "$@"
+		curl -fsS "$@"
 	fi
 }
 
@@ -37,23 +37,23 @@ function install() {
 
 	local download_url
 
-	if [[ -n ${GITHUB_API_TOKEN} ]]; then
+	if [[ -n ${GITHUB_API_TOKEN:-} ]]; then
 		local asset_url
 		asset_url="https://api.github.com/repos/tmccombs/hcl2json/releases/tags/v${version}"
-		download_url=$(gh_curl -H "Accept: application/vnd.github.v3.raw" "${asset_url}" | jq -r ".assets | map(select(.name == \"hcl2json_${platform}_${arch}.tar.gz\"))[0].url")
+		download_url=$(gh_curl -H "Accept: application/vnd.github.v3.raw" "${asset_url}" | jq -r ".assets | map(select(.name == \"hcl2json_${platform}_${arch}\"))[0].url")
 		if [[ ${download_url} == null ]]; then
-			echo "Package not found in a release."
+			echo "Package hcl2json_${platform}_${arch} not found in a release."
 			exit 1
 		fi
 	else
-		download_url="https://github.com/tmccombs/hcl2json/releases/download/v${version}/hcl2json_${platform}_${arch}.tar.gz"
+		download_url="https://github.com/tmccombs/hcl2json/releases/download/v${version}/hcl2json_${platform}_${arch}"
 	fi
 
 	echo "Downloading hcl2json from ${download_url}"
 
-	pushd "${bin_install_path}" >/dev/null
-
 	mkdir -p "${bin_install_path}"
+
+	pushd "${bin_install_path}" >/dev/null
 
 	gh_curl -H "Accept: application/octet-stream" -L -o "${bin_install_path}/hcl2json" "${download_url}"
 
