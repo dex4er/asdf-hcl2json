@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-shopt -s inherit_errexit
+shopt -s inherit_errexit 2>/dev/null || true
 
 function gh_curl() {
 	if [[ -n ${GITHUB_API_TOKEN:-} ]]; then
