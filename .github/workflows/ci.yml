@@ -1,7 +1,9 @@
 name: CI
 
+permissions: {}
+
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   pull_request:
     paths-ignore:
       - "**.md"
@@ -37,6 +39,8 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: hcl2json </dev/null
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   macos:
     runs-on: macos-latest
@@ -49,3 +53,5 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: hcl2json </dev/null
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

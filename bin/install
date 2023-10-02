@@ -8,17 +8,21 @@ shopt -s inherit_errexit 2>/dev/null || true
 [[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
 
 function gh_curl() {
-	if [[ -n ${GITHUB_API_TOKEN:-} ]]; then
-		curl -fsS -H "Authorization: token ${GITHUB_API_TOKEN}" "$@"
+	if [[ -n ${GITHUB_TOKEN-} ]]; then
+		curl -fLsS -H "Authorization: token ${GITHUB_TOKEN}" "$@"
+	elif [[ -n ${GITHUB_API_TOKEN-} ]]; then
+		curl -fLsS -H "Authorization: token ${GITHUB_API_TOKEN}" "$@"
 	else
-		curl -fsS "$@"
+		curl -fLsS "$@"
 	fi
 }
 
 function install() {
+	# set -x
 	local install_type=$1
 	[[ ${install_type} != "version" ]] && echo "install type, ${install_type}, is not supported" && exit 1
 
+	local prefix="v"
 	local version=$2
 	local install_path=$3
 
@@ -37,19 +41,22 @@ function install() {
 
 	local download_url
 
-	if [[ -n ${GITHUB_API_TOKEN:-} ]]; then
+	local repo="tmccombs/hcl2json"
+	local download_filename="hcl2json_${platform}_${arch}"
+
+	if [[ -n ${GITHUB_TOKEN-} ]] || [[ -n ${GITHUB_API_TOKEN-} ]]; then
 		local asset_url
-		asset_url="https://api.github.com/repos/tmccombs/hcl2json/releases/tags/v${version}"
-		download_url=$(gh_curl -H "Accept: application/vnd.github.v3.raw" "${asset_url}" | jq -r ".assets | map(select(.name == \"hcl2json_${platform}_${arch}\"))[0].url")
+		asset_url="https://api.github.com/repos/${repo}/releases/tags/${prefix}${version}"
+		download_url=$(gh_curl -H "Accept: application/vnd.github.v3.raw" "${asset_url}" | jq -r ".assets | map(select(.name == \"${download_filename}\"))[0].url")
 		if [[ ${download_url} == null ]]; then
-			echo "Package hcl2json_${platform}_${arch} not found in a release."
+			echo "Asset ${download_filename} not found in a release ${prefix}${version}."
 			exit 1
 		fi
 	else
-		download_url="https://github.com/tmccombs/hcl2json/releases/download/v${version}/hcl2json_${platform}_${arch}"
+		download_url="https://github.com/${repo}/releases/download/${prefix}${version}/${download_filename}"
 	fi
 
-	echo "Downloading hcl2json from ${download_url}"
+	echo "Downloading ${download_filename} from release ${prefix}${version} from ${download_url}"
 
 	mkdir -p "${bin_install_path}"
 
